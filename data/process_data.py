@@ -22,41 +22,25 @@ def clean_data(df):
     Output:
     dataframe with messages, categories as column names and without duplicates
     """
+    categories = df['categories'].str.split(";", expand=True)
+    row = categories.iloc[0]
+    categories.columns = row.apply(lambda x:x.split('-')[0])
 
-    print('Cleaning merged data frame')
-    # create a dataframe of the 36 individual category columns
-    categories = df["categories"].str.split(";", expand=True)
-
-    # extract headers
-    headings = categories.loc[0].str.split("-");
-    header = {}
-    i=0
-    for heading in headings:
-        header[i] = heading[0]
-        i=i+1
-
-    # rename headers
-    categories = categories.reset_index().rename(columns = header)
-    categories = categories.drop(['index'], axis=1)
-
-    # convert category values to 0 and 1
     for column in categories:
-        # set each value to be the last character of the string
-        categories[column] = pd.Series(categories[column]).astype(str).str.split("-").str[1]
-
-        # convert column from string to numeric
-        categories[column] = pd.to_numeric(categories[column],errors='coerce')
-
+    # set each value to be the last character of the string
+        categories[column] = categories[column] = categories[column].str.split('-').str[-1]
+    # convert column from string to numeric
+        categories[column] = pd.to_numeric(categories[column])
+    #assert that all columns have values 0 or 1
+        categories[column] = categories[column].apply(lambda x:1 if x>1 else x)
     # drop the original categories column from `df`
-    df = df.drop(["categories"], axis=1)
-
+    df.drop('categories', axis=1, inplace=True)
     # concatenate the original dataframe with the new `categories` dataframe
-    df = df.reset_index(drop=True);
-    categories = categories.reset_index()
-    df = pd.concat([df, categories], sort=False, axis=1,ignore_index=False)
-
-    # Remove duplicates
-    df.drop_duplicates()
+    df = pd.concat([df, categories], axis=1)
+    # drop duplicates
+    df.drop_duplicates(inplace=True)
+    # remove nans based on original column (high number of nans)
+    df = df[~(df.isnull().any(axis=1))|(df.original.isnull())]
 
     return df
 

@@ -24,6 +24,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 def load_data(database_filepath):
     """ load data from sqlite database and split into features (messages) and targets (categories)
@@ -43,10 +44,11 @@ def tokenize(text):
     Input: text as string
     Output: cleaned words as array
     """
+    # convert to lower case and filter special characters
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
-    #Tokenize
+    # Tokenize
     words = nltk.word_tokenize(text)
-    #Remove stopwords
+    # Remove stopwords
     words= [w for w in words if w not in stopwords.words("english")]
     # Reduce words to their root form
     lemmatizer = WordNetLemmatizer()
@@ -69,20 +71,20 @@ def build_model():
                 'clf__estimator__learning_rate': [0.001, 0.01, 0.1],
                 'tfidf__smooth_idf': [True, False]
     }
+
     return GridSearchCV(pipeline, param_grid=parameters, cv=2)
 
-def evaluate_model(model, X_test, y_test, category_names):
+def evaluate_model(model, X_test, Y_test, category_names):
     """evaluate model against test-set with classification report
     Input:
         - model: trained model
         - X_test: test features (
-        - y_test: test targets
+        - Y_test: test targets
         - category_names (categories
     Output: classification report with precision, recall, f1_score and support metrics
     """
     y_pred = model.predict(X_test)
-    print(classification_report(y_test, y_pred, target_names=category_names, digits=2))
-
+    print(classification_report(Y_test, y_pred, target_names=category_names, digits=2))
 
 def save_model(model, model_filepath):
     """save model to pickle file
